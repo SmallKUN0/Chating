@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>坤坤的 Sodium 方块 启动器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; background-color: #90EE90; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+        #main-screen { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 18vh; position: relative; }
+        .title { color: #FFFFFF; font-size: 2.2rem; font-weight: bold; text-align: center; margin-bottom: 40px; text-shadow: 0 0 20px rgba(255,255,255,0.9), 0 0 40px rgba(255,255,255,0.6); line-height: 1.3; user-select: none; -webkit-user-select: none; }
+        .title .emoji-fire { filter: brightness(3) saturate(0) drop-shadow(0 0 8px #FFFFFF) drop-shadow(0 0 16px #FFFFFF); display: inline-block; }
+        .version-select-btn { background: rgba(255,255,255,0.1); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 1.1rem; padding: 12px 24px; border-radius: 10px; cursor: pointer; outline: none; margin-bottom: 25px; height: 48px; line-height: 1; min-width: 220px; user-select: none; -webkit-user-select: none; text-align: center; transition: all 0.15s ease; touch-action: manipulation; }
+        .version-select-btn:hover { background: rgba(255,255,255,0.25); }
+        .version-select-btn:active { background: rgba(255,255,255,0.4); transform: scale(0.96); }
+        .launch-btn { background: rgba(255,255,255,0.08); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 1.2rem; font-weight: 600; padding: 12px 50px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease; height: 48px; line-height: 1; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+        .launch-btn:hover { background: rgba(255,255,255,0.25); }
+        .launch-btn:active { background: rgba(255,255,255,0.4); transform: scale(0.96); }
+        .copyright-text { color: #FFFFFF; font-size: 0.85rem; text-align: center; margin-top: 16px; text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.5); user-select: none; -webkit-user-select: none; opacity: 0.9; }
+        .top-right-btn { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 0.85rem; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; user-select: none; -webkit-user-select: none; touch-action: manipulation; z-index: 10; }
+        .top-right-btn:hover { background: rgba(255,255,255,0.3); }
+        .top-right-btn:active { background: rgba(255,255,255,0.45); transform: scale(0.95); }
+        .load-resource-btn { position: absolute; top: 60px; right: 16px; background: rgba(255,255,255,0.15); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 0.85rem; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; user-select: none; -webkit-user-select: none; touch-action: manipulation; z-index: 10; }
+        .load-resource-btn:hover { background: rgba(255,255,255,0.3); }
+        .load-resource-btn:active { background: rgba(255,255,255,0.45); transform: scale(0.95); }
+        .gs-test-btn { position: absolute; top: 104px; right: 16px; background: rgba(255,255,255,0.15); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 0.85rem; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; user-select: none; -webkit-user-select: none; touch-action: manipulation; z-index: 10; }
+        .gs-test-btn:hover { background: rgba(255,255,255,0.3); }
+        .gs-test-btn:active { background: rgba(255,255,255,0.45); transform: scale(0.95); }
+        .plugin-btn { position: absolute; top: 148px; right: 16px; background: rgba(255,255,255,0.15); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 0.85rem; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; user-select: none; -webkit-user-select: none; touch-action: manipulation; z-index: 10; }
+        .plugin-btn:hover { background: rgba(255,255,255,0.3); }
+        .plugin-btn:active { background: rgba(255,255,255,0.45); transform: scale(0.95); }
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #90EE90; display: none; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; z-index: 100; }
+        #loading-screen.show { opacity: 1; }
+        .studio-name { color: #FFFFFF; font-size: 2.8rem; font-weight: bold; text-shadow: 0 0 30px rgba(255,255,255,1), 0 0 60px rgba(255,255,255,0.7); margin-bottom: 25px; text-align: center; user-select: none; -webkit-user-select: none; }
+        .loading-text { color: #FFFFFF; font-size: 1.15rem; text-shadow: 0 0 12px rgba(255,255,255,0.9); text-align: center; user-select: none; -webkit-user-select: none; }
+        #game-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; z-index: 50; background: #000; }
+        #game-frame { width: 100%; height: 100%; border: none; }
+        .plugin-landscape #game-container { top: 50%; left: 50%; width: min(100vw, calc(100vh * 9 / 16)); height: min(100vh, calc(100vw * 16 / 9)); transform: translate(-50%, -50%) rotate(90deg); transform-origin: center center; }
+        .plugin-fullscreen:not(.plugin-landscape) #game-container { top: 0; left: 0; width: 100%; height: 100%; transform: none; }
+        .plugin-landscape.plugin-fullscreen #game-container { top: 50%; left: 50%; width: 100vh; height: 100vw; transform: translate(-50%, -50%) rotate(90deg); transform-origin: center center; }
+        #float-ball { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 0.85rem; font-weight: bold; display: none; align-items: center; justify-content: center; text-align: center; cursor: pointer; z-index: 200; user-select: none; -webkit-user-select: none; touch-action: none; box-shadow: 0 0 15px rgba(255,255,255,0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); line-height: 1.2; padding: 4px; }
+        #float-ball.dragging { opacity: 0.8; cursor: grabbing; }
+        #confirm-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 300; }
+        .modal-content { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 30px 40px; text-align: center; min-width: 260px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .modal-text { color: #333; font-size: 1.2rem; font-weight: 600; margin-bottom: 25px; }
+        .modal-btns { display: flex; gap: 15px; justify-content: center; }
+        .modal-btn { padding: 10px 30px; border-radius: 8px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.15s; height: 42px; line-height: 1; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+        .btn-yes { background: #ff4444; color: #FFFFFF; }
+        .btn-yes:hover { background: #ff2222; }
+        .btn-no { background: #e0e0e0; color: #333; }
+        .btn-no:hover { background: #d0d0d0; }
+        .info-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 350; }
+        .info-modal-content { background: #FFFFFF; border: 2px solid #000000; border-radius: 12px; padding: 28px 32px; text-align: center; max-width: 320px; width: 85%; box-shadow: 0 8px 32px rgba(0,0,0,0.25); }
+        .info-modal-text { color: #000000; font-size: 1.05rem; font-weight: 500; margin-bottom: 24px; line-height: 1.6; }
+        .info-modal-btn { background: #000000; color: #FFFFFF; font-size: 1rem; font-weight: 600; padding: 10px 36px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.15s; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+        .info-modal-btn:hover { background: #333333; }
+        .info-modal-btn:active { transform: scale(0.96); }
+        #version-picker { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #90EE90; display: none; flex-direction: column; z-index: 400; overflow: hidden; }
+        .picker-header { padding: 16px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.3); flex-shrink: 0; }
+        .picker-cancel-btn { background: rgba(255,255,255,0.15); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 1rem; font-weight: 600; padding: 10px 32px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+        .picker-cancel-btn:hover { background: rgba(255,255,255,0.3); }
+        .picker-cancel-btn:active { background: rgba(255,255,255,0.45); transform: scale(0.95); }
+        .picker-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 0; }
+        .picker-item { color: #FFFFFF; font-size: 1.15rem; font-weight: 500; text-align: center; padding: 16px 20px; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation; position: relative; transition: background 0.1s; }
+        .picker-item:hover { background: rgba(255,255,255,0.1); }
+        .picker-item:active { background: rgba(255,255,255,0.2); }
+        .picker-item::after { content: ""; position: absolute; bottom: 0; left: 15%; width: 70%; height: 1px; background: rgba(255,255,255,0.6); }
+        .picker-item:last-child::after { display: none; }
+        .picker-item.selected { background: rgba(255,255,255,0.2); }
+        #resource-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #90EE90; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 400; }
+        .loader-cancel-btn { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 0.9rem; font-weight: 600; padding: 8px 20px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; user-select: none; -webkit-user-select: none; touch-action: manipulation; z-index: 10; }
+        .loader-cancel-btn:hover { background: rgba(255,255,255,0.3); }
+        .loader-cancel-btn:active { background: rgba(255,255,255,0.45); transform: scale(0.95); }
+        .loader-title { color: #FFFFFF; font-size: 1.3rem; font-weight: bold; text-shadow: 0 0 15px rgba(255,255,255,0.8); margin-bottom: 30px; text-align: center; user-select: none; -webkit-user-select: none; }
+        .progress-bar-container { width: 70%; max-width: 320px; height: 12px; background: rgba(255,255,255,0.2); border-radius: 6px; overflow: hidden; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.4); }
+        .progress-bar-fill { height: 100%; background: #FFFFFF; border-radius: 6px; width: 0%; transition: width 0.2s ease; box-shadow: 0 0 10px rgba(255,255,255,0.6); }
+        .loader-current-file { color: #FFFFFF; font-size: 1rem; text-shadow: 0 0 10px rgba(255,255,255,0.7); text-align: center; min-height: 1.5rem; user-select: none; -webkit-user-select: none; }
+        .loader-status { color: #FFFFFF; font-size: 0.9rem; text-shadow: 0 0 8px rgba(255,255,255,0.6); text-align: center; margin-top: 12px; opacity: 0.8; user-select: none; -webkit-user-select: none; }
+        #gs-test-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #90EE90; display: none; flex-direction: column; z-index: 450; overflow: hidden; }
+        .gs-header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .gs-back-btn { background: rgba(255,255,255,0.15); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 0.9rem; font-weight: 600; padding: 8px 20px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+        .gs-back-btn:hover { background: rgba(255,255,255,0.3); }
+        .gs-back-btn:active { background: rgba(255,255,255,0.45); transform: scale(0.95); }
+        .gs-title { color: #FFFFFF; font-size: 1.1rem; font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.8); user-select: none; -webkit-user-select: none; }
+        .gs-canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px; overflow: hidden; }
+        #gsCanvas { background: #87CEEB; border: 2px solid #FFFFFF; border-radius: 4px; box-shadow: 0 0 20px rgba(255,255,255,0.3); max-width: 100%; max-height: 100%; }
+        .gs-controls { padding: 10px 16px 20px; display: flex; gap: 12px; justify-content: center; flex-shrink: 0; }
+        .gs-control-btn { background: rgba(255,255,255,0.15); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 0.85rem; font-weight: 600; padding: 8px 18px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+        .gs-control-btn:hover { background: rgba(255,255,255,0.3); }
+        .gs-control-btn:active { background: rgba(255,255,255,0.45); transform: scale(0.95); }
+        #plugin-picker { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #90EE90; display: none; flex-direction: column; z-index: 460; overflow: hidden; }
+        .plugin-picker-header { padding: 16px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.3); flex-shrink: 0; }
+        .plugin-picker-back-btn { background: rgba(255,255,255,0.15); border: 2px solid #FFFFFF; color: #FFFFFF; font-size: 1rem; font-weight: 600; padding: 10px 32px; border-radius: 10px; cursor: pointer; transition: all 0.15s ease; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+        .plugin-picker-back-btn:hover { background: rgba(255,255,255,0.3); }
+        .plugin-picker-back-btn:active { background: rgba(255,255,255,0.45); transform: scale(0.95); }
+        .plugin-picker-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 0; }
+        .plugin-picker-item { color: #FFFFFF; padding: 16px 24px; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation; position: relative; transition: background 0.1s; display: flex; align-items: center; gap: 14px; }
+        .plugin-picker-item:hover { background: rgba(255,255,255,0.1); }
+        .plugin-picker-item:active { background: rgba(255,255,255,0.2); }
+        .plugin-picker-item::after { content: ""; position: absolute; bottom: 0; left: 15%; width: 70%; height: 1px; background: rgba(255,255,255,0.6); }
+        .plugin-picker-item:last-child::after { display: none; }
+        .plugin-checkbox { width: 22px; height: 22px; border: 2px solid #FFFFFF; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; background: rgba(255,255,255,0.1); }
+        .plugin-checkbox.checked { background: rgba(255,255,255,0.35); }
+        .plugin-checkbox.checked::after { content: "✓"; color: #FFFFFF; font-size: 14px; font-weight: bold; }
+        .plugin-info { display: flex; flex-direction: column; gap: 3px; }
+        .plugin-name { font-size: 1.15rem; font-weight: 500; }
+        .plugin-desc { font-size: 0.85rem; opacity: 0.75; }
+    </style>
+</head>
+<body>
+
+    <div id="main-screen">
+        <button class="top-right-btn" id="clearCacheBtn">清理缓存</button>
+        <button class="load-resource-btn" id="loadResourceBtn">加载资源</button>
+        <button class="gs-test-btn" id="gsTestBtn">Three GS测试</button>
+        <button class="plugin-btn" id="pluginBtn">插件</button>
+        <div class="title">Sodium <span class="emoji-fire">🔥</span> 方块 启动器 2.0</div>
+        <button class="version-select-btn" id="versionSelectBtn">1.5.5</button>
+        <button class="launch-btn" id="launchBtn">启动</button>
+        <div class="copyright-text">版权所有：坤坤工作室/团体   禁止二次分发</div>
+    </div>
+
+    <div id="loading-screen">
+        <div class="studio-name">🏀坤坤工作室</div>
+        <div class="loading-text" id="loadingText">检查依赖……</div>
+    </div>
+
+    <div id="game-container">
+        <iframe id="game-frame" sandbox="allow-scripts allow-same-origin allow-pointer-lock"></iframe>
+    </div>
+
+    <div id="float-ball">长按<br>退出</div>
+
+    <div id="confirm-modal">
+        <div class="modal-content">
+            <div class="modal-text">是否退出</div>
+            <div class="modal-btns">
+                <button class="modal-btn btn-yes" id="btnYes">是</button>
+                <button class="modal-btn btn-no" id="btnNo">否</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-modal" id="updateModal">
+        <div class="info-modal-content">
+            <div class="info-modal-text">欢迎，本次的2.3版本更新了末地世界和第4个维度，祝你们玩得开心</div>
+            <button class="info-modal-btn" id="updateModalBtn">开始体验</button>
+        </div>
+    </div>
+
+    <div class="info-modal" id="clearSuccessModal">
+        <div class="info-modal-content">
+            <div class="info-modal-text">缓存清理成功！</div>
+            <button class="info-modal-btn" id="clearSuccessModalBtn">确定</button>
+        </div>
+    </div>
+
+    <div id="version-picker">
+        <div class="picker-header">
+            <button class="picker-cancel-btn" id="pickerCancelBtn">取消</button>
+        </div>
+        <div class="picker-list" id="pickerList"></div>
+    </div>
+
+    <div id="resource-loader">
+        <button class="loader-cancel-btn" id="loaderCancelBtn">取消</button>
+        <div class="loader-title">正在加载PNG资源……</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBarFill"></div>
+        </div>
+        <div class="loader-current-file" id="loaderCurrentFile"></div>
+        <div class="loader-status" id="loaderStatus"></div>
+    </div>
+
+    <div id="gs-test-screen">
+        <div class="gs-header">
+            <button class="gs-back-btn" id="gsBackBtn">返回</button>
+            <div class="gs-title">Three GS 地形测试</div>
+            <div style="width: 60px;"></div>
+        </div>
+        <div class="gs-canvas-wrap">
+            <canvas id="gsCanvas" width="800" height="480"></canvas>
+        </div>
+        <div class="gs-controls">
+            <button class="gs-control-btn" id="gsRegenBtn">重新生成</button>
+            <button class="gs-control-btn" id="gsLeftBtn">← 左移</button>
+            <button class="gs-control-btn" id="gsRightBtn">右移 →</button>
+        </div>
+    </div>
+
+    <div id="plugin-picker">
+        <div class="plugin-picker-header">
+            <button class="plugin-picker-back-btn" id="pluginPickerBackBtn">返回</button>
+        </div>
+        <div class="plugin-picker-list" id="pluginPickerList"></div>
+    </div>
+
+    <script>
+        const versionSelectBtn = document.getElementById('versionSelectBtn');
+        const launchBtn = document.getElementById('launchBtn');
+        const mainScreen = document.getElementById('main-screen');
+        const loadingScreen = document.getElementById('loading-screen');
+        const loadingText = document.getElementById('loadingText');
+        const gameContainer = document.getElementById('game-container');
+        const gameFrame = document.getElementById('game-frame');
+        const floatBall = document.getElementById('float-ball');
+        const confirmModal = document.getElementById('confirm-modal');
+        const btnYes = document.getElementById('btnYes');
+        const btnNo = document.getElementById('btnNo');
+        const clearCacheBtn = document.getElementById('clearCacheBtn');
+        const loadResourceBtn = document.getElementById('loadResourceBtn');
+        const gsTestBtn = document.getElementById('gsTestBtn');
+        const pluginBtn = document.getElementById('pluginBtn');
+        const updateModal = document.getElementById('updateModal');
+        const updateModalBtn = document.getElementById('updateModalBtn');
+        const clearSuccessModal = document.getElementById('clearSuccessModal');
+        const clearSuccessModalBtn = document.getElementById('clearSuccessModalBtn');
+        const versionPicker = document.getElementById('version-picker');
+        const pickerList = document.getElementById('pickerList');
+        const pickerCancelBtn = document.getElementById('pickerCancelBtn');
+        const resourceLoader = document.getElementById('resource-loader');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const loaderCurrentFile = document.getElementById('loaderCurrentFile');
+        const loaderStatus = document.getElementById('loaderStatus');
+        const loaderCancelBtn = document.getElementById('loaderCancelBtn');
+        const gsTestScreen = document.getElementById('gs-test-screen');
+        const gsBackBtn = document.getElementById('gsBackBtn');
+        const gsCanvas = document.getElementById('gsCanvas');
+        const gsRegenBtn = document.getElementById('gsRegenBtn');
+        const gsLeftBtn = document.getElementById('gsLeftBtn');
+        const gsRightBtn = document.getElementById('gsRightBtn');
+        const pluginPicker = document.getElementById('plugin-picker');
+        const pluginPickerList = document.getElementById('pluginPickerList');
+        const pluginPickerBackBtn = document.getElementById('pluginPickerBackBtn');
+
+        const versionData = [
+            { name: '2.3', file: 'Three2.3.html' },
+            { name: '1.5.6', file: 'Three1.5.6.html' },
+            { name: '1.5.5', file: 'Three1.5.5.html' },
+            { name: '1.5', file: 'Three1.5.html' },
+            { name: '1.4', file: 'Three1.4.html' },
+            { name: '1.2', file: 'Three1.2.html' },
+            { name: 'Sodium1.5.5区块渲染器', file: 'Sodium1.5.5.html' },
+            { name: '番外-溶洞2.0', file: 'Cave2.0.html' },
+            { name: '番外-后室1.4', file: 'backrooms1.4.html' },
+            { name: '番外-解压打击球', file: 'hurtkimi3.0.html' },
+            { name: '草原漫步 1.0', file: '94.html' },
+            { name: '坤坤大战 2.0', file: 'FightChicken.html' },
+            { name: '开放激战1.0', file: 'FightPlayer.html' },
+            { name: '八番列车 1.0', file: 'EightTrain.html' },
+            { name: '台球 1.0', file: 'TableBall1.0.html' }
+        ];
+
+        const pluginData = [
+            { id: 'landscape', name: '横屏插件', desc: '旋转90度并改为16:9比例' },
+            { id: 'fullscreen', name: '撑满全屏', desc: '强制撑满全屏显示' }
+        ];
+
+        let currentVersionIndex = 0;
+        let isLaunching = false;
+        let isLoadingResources = false;
+        let resourceAbortController = null;
+        let pluginState = {};
+
+        const TEXTURE_BASE_URL = 'https://cdn.jsdmirror.com/gh/Faithful-Pack/Default-Java@1.21.11/assets/minecraft/textures/block/';
+        
+        const textureList = [
+            { display: '土块', file: 'dirt.png' },
+            { display: '石头', file: 'stone.png' },
+            { display: '基岩', file: 'bedrock.png' },
+            { display: '橡木原木顶面', file: 'oak_log_top.png' },
+            { display: '橡木原木侧面', file: 'oak_log.png' },
+            { display: '下界岩', file: 'netherrack.png' },
+            { display: '诡异菌柄顶面', file: 'warped_stem_top.png' },
+            { display: '诡异菌柄侧面', file: 'warped_stem.png' },
+            { display: '绯红菌柄顶面', file: 'crimson_stem_top.png' },
+            { display: '绯红菌柄侧面', file: 'crimson_stem.png' },
+            { display: '诡异树叶', file: 'warped_wart_block.png' },
+            { display: '绯红树叶', file: 'nether_wart_block.png' },
+            { display: '诡异菌岩顶面', file: 'warped_nylium_top.png' },
+            { display: '诡异菌岩侧面', file: 'warped_nylium_side.png' },
+            { display: '绯红菌岩顶面', file: 'crimson_nylium_top.png' },
+            { display: '绯红菌岩侧面', file: 'crimson_nylium_side.png' },
+            { display: '黑曜石', file: 'obsidian.png' },
+            { display: 'TNT顶面', file: 'tnt_top.png' },
+            { display: 'TNT底面', file: 'tnt_bottom.png' },
+            { display: 'TNT侧面', file: 'tnt_side.png' },
+            { display: '橡树树叶', file: 'oak_leaves.png' },
+            { display: '草方块顶面', file: 'grass_block_top.png' },
+            { display: '草方块侧面', file: 'grass_block_side.png' }
+        ];
+
+        versionSelectBtn.textContent = versionData[currentVersionIndex].name;
+
+        function loadPluginState() {
+            try { const saved = localStorage.getItem('kk_plugins'); if (saved) pluginState = JSON.parse(saved); }
+            catch (e) { pluginState = {}; }
+        }
+        function savePluginState() {
+            try { localStorage.setItem('kk_plugins', JSON.stringify(pluginState)); }
+            catch (e) { console.warn('插件状态保存失败'); }
+        }
+        function togglePlugin(id) { pluginState[id] = !pluginState[id]; savePluginState(); renderPluginPicker(); }
+        function applyPlugins() {
+            document.body.classList.toggle('plugin-landscape', !!pluginState['landscape']);
+            document.body.classList.toggle('plugin-fullscreen', !!pluginState['fullscreen']);
+        }
+        function clearPlugins() { document.body.classList.remove('plugin-landscape', 'plugin-fullscreen'); }
+        loadPluginState();
+
+        function checkUpdateNotice() {
+            try { const notified = localStorage.getItem('2.0更新提示已通知'); if (!notified) updateModal.style.display = 'flex'; }
+            catch (e) { console.warn('localStorage不可用'); }
+        }
+        window.addEventListener('load', checkUpdateNotice);
+
+        function onUpdateModalBtnClick(e) {
+            if (e && e.type === 'touchstart') e.preventDefault();
+            try { localStorage.setItem('2.0更新提示已通知', 'true'); } catch (e) {}
+            updateModal.style.display = 'none';
+        }
+        updateModalBtn.addEventListener('click', onUpdateModalBtnClick);
+        updateModalBtn.addEventListener('touchstart', onUpdateModalBtnClick, { passive: false });
+
+        function onClearSuccessBtnClick(e) {
+            if (e && e.type === 'touchstart') e.preventDefault();
+            clearSuccessModal.style.display = 'none';
+        }
+        clearSuccessModalBtn.addEventListener('click', onClearSuccessBtnClick);
+        clearSuccessModalBtn.addEventListener('touchstart', onClearSuccessBtnClick, { passive: false });
+
+        function clearAllCache(e) {
+            if (e && e.type === 'touchstart') e.preventDefault();
+            try { localStorage.clear(); pluginState = {}; clearPlugins(); clearSuccessModal.style.display = 'flex'; }
+            catch (err) { alert('清理缓存失败: ' + err.message); }
+        }
+        clearCacheBtn.addEventListener('click', clearAllCache);
+        clearCacheBtn.addEventListener('touchstart', clearAllCache, { passive: false });
+
+        function openVersionPicker() {
+            pickerList.innerHTML = '';
+            versionData.forEach((v, idx) => {
+                const item = document.createElement('div');
+                item.className = 'picker-item';
+                item.textContent = v.name;
+                if (idx === currentVersionIndex) item.classList.add('selected');
+                let startTime = 0, startY = 0, hasMoved = false;
+                function onPointerDown(ev) { const pos = getClientPos(ev); startTime = Date.now(); startY = pos.y; hasMoved = false; }
+                function onPointerMove(ev) { const pos = getClientPos(ev); if (Math.abs(pos.y - startY) > 10) hasMoved = true; }
+                function onPointerUp(ev) { const dt = Date.now() - startTime; if (!hasMoved && dt < 200) { ev.preventDefault && ev.preventDefault(); ev.stopPropagation && ev.stopPropagation(); selectVersion(idx); } }
+                item.addEventListener('mousedown', onPointerDown);
+                item.addEventListener('mousemove', onPointerMove);
+                item.addEventListener('mouseup', onPointerUp);
+                item.addEventListener('touchstart', onPointerDown, { passive: true });
+                item.addEventListener('touchmove', onPointerMove, { passive: true });
+                item.addEventListener('touchend', (ev) => { ev.preventDefault(); onPointerUp(ev); }, { passive: false });
+                pickerList.appendChild(item);
+            });
+            versionPicker.style.display = 'flex';
+        }
+        function selectVersion(index) { currentVersionIndex = index; versionSelectBtn.textContent = versionData[index].name; versionPicker.style.display = 'none'; }
+        function closeVersionPicker() { versionPicker.style.display = 'none'; }
+        versionSelectBtn.addEventListener('click', openVersionPicker);
+        versionSelectBtn.addEventListener('touchstart', (e) => { e.preventDefault(); openVersionPicker(); }, { passive: false });
+        pickerCancelBtn.addEventListener('click', closeVersionPicker);
+        pickerCancelBtn.addEventListener('touchstart', (e) => { e.preventDefault(); closeVersionPicker(); }, { passive: false });
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); });
+        }
+        async function loadResources() {
+            if (isLoadingResources) return;
+            isLoadingResources = true;
+            resourceAbortController = new AbortController();
+            const signal = resourceAbortController.signal;
+            resourceLoader.style.display = 'flex';
+            progressBarFill.style.width = '0%';
+            loaderCurrentFile.textContent = '';
+            loaderStatus.textContent = '';
+            const total = textureList.length;
+            const cachedData = {};
+            let successCount = 0, failCount = 0;
+            for (let i = 0; i < total; i++) {
+                if (signal.aborted) { loaderStatus.textContent = '已取消'; isLoadingResources = false; return; }
+                const tex = textureList[i];
+                loaderCurrentFile.textContent = '正在缓存：' + tex.display;
+                progressBarFill.style.width = Math.round(((i) / total) * 100) + '%';
+                try {
+                    const url = TEXTURE_BASE_URL + tex.file;
+                    const response = await fetch(url, { signal });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    const blob = await response.blob();
+                    const base64 = await blobToBase64(blob);
+                    cachedData[tex.file] = base64;
+                    successCount++;
+                } catch (err) {
+                    if (signal.aborted) { loaderStatus.textContent = '已取消'; isLoadingResources = false; return; }
+                    failCount++;
+                    console.warn('加载失败:', tex.file, err.message);
+                }
+            }
+            progressBarFill.style.width = '100%';
+            loaderCurrentFile.textContent = '';
+            try { localStorage.setItem('kk_textures', JSON.stringify(cachedData)); loaderStatus.textContent = '加载完成！成功 ' + successCount + ' 个' + (failCount > 0 ? '，失败 ' + failCount + ' 个' : ''); }
+            catch (err) { loaderStatus.textContent = '缓存保存失败: ' + err.message; }
+            setTimeout(() => { resourceLoader.style.display = 'none'; isLoadingResources = false; resourceAbortController = null; }, 1500);
+        }
+        function cancelLoadResources() {
+            if (resourceAbortController) resourceAbortController.abort();
+            resourceLoader.style.display = 'none';
+            isLoadingResources = false;
+            resourceAbortController = null;
+        }
+        loadResourceBtn.addEventListener('click', loadResources);
+        loadResourceBtn.addEventListener('touchstart', (e) => { e.preventDefault(); loadResources(); }, { passive: false });
+        loaderCancelBtn.addEventListener('click', cancelLoadResources);
+        loaderCancelBtn.addEventListener('touchstart', (e) => { e.preventDefault(); cancelLoadResources(); }, { passive: false });
+
+        function renderPluginPicker() {
+            pluginPickerList.innerHTML = '';
+            pluginData.forEach((p) => {
+                const item = document.createElement('div');
+                item.className = 'plugin-picker-item';
+                const checkbox = document.createElement('div');
+                checkbox.className = 'plugin-checkbox' + (pluginState[p.id] ? ' checked' : '');
+                const info = document.createElement('div');
+                info.className = 'plugin-info';
+                const name = document.createElement('div');
+                name.className = 'plugin-name';
+                name.textContent = p.name;
+                const desc = document.createElement('div');
+                desc.className = 'plugin-desc';
+                desc.textContent = p.desc;
+                info.appendChild(name);
+                info.appendChild(desc);
+                item.appendChild(checkbox);
+                item.appendChild(info);
+                item.addEventListener('click', () => togglePlugin(p.id));
+                item.addEventListener('touchstart', (e) => { e.preventDefault(); togglePlugin(p.id); }, { passive: false });
+                pluginPickerList.appendChild(item);
+            });
+        }
+        function openPluginPicker() { renderPluginPicker(); pluginPicker.style.display = 'flex'; }
+        function closePluginPicker() { pluginPicker.style.display = 'none'; }
+        pluginBtn.addEventListener('click', openPluginPicker);
+        pluginBtn.addEventListener('touchstart', (e) => { e.preventDefault(); openPluginPicker(); }, { passive: false });
+        pluginPickerBackBtn.addEventListener('click', closePluginPicker);
+        pluginPickerBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); closePluginPicker(); }, { passive: false });
+
+        let gsOffsetX = 0;
+        let gsSeed = Math.random() * 10000;
+        function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+        function lerp(a, b, t) { return a + (b - a) * t; }
+        function grad(hash, x) { return (hash & 1) === 0 ? x : -x; }
+        function noise1D(x) {
+            const X = Math.floor(x) & 255;
+            const xf = x - Math.floor(x);
+            const u = fade(xf);
+            const p = [151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,88,237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,102,143,54,65,25,63,161,1,216,80,73,209,76,132,187,208,89,18,169,200,196,135,130,116,188,159,86,164,100,109,198,173,186,3,64,52,217,226,250,124,123,5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,223,183,170,213,119,248,152,2,44,154,163,70,221,153,101,155,167,43,172,9,129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180];
+            const n0 = grad(p[X], xf);
+            const n1 = grad(p[(X + 1) & 255], xf - 1);
+            return lerp(n0, n1, u);
+        }
+        function fbm(x) {
+            let value = 0, amplitude = 0.5, frequency = 1;
+            for (let i = 0; i < 4; i++) { value += amplitude * noise1D(x * frequency + gsSeed); amplitude *= 0.5; frequency *= 2; }
+            return value;
+        }
+        function getTerrainHeight(x) { const n = fbm(x * 0.05); return Math.floor((n + 0.5) * 12) + 4; }
+        function drawTerrain() {
+            const ctx = gsCanvas.getContext('2d');
+            const w = gsCanvas.width, h = gsCanvas.height;
+            const blockSize = 16;
+            const cols = Math.ceil(w / blockSize), rows = Math.ceil(h / blockSize);
+            ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, w, h);
+            for (let c = 0; c < 5; c++) {
+                const cx = ((c * 137 + gsSeed * 3) % (w + 100)) - 50 + (gsOffsetX * 0.3) % w;
+                const cy = 30 + (c * 23) % 60;
+                ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                ctx.beginPath();
+                ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+                ctx.arc(cx + 18, cy - 5, 16, 0, Math.PI * 2);
+                ctx.arc(cx + 35, cy, 18, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            for (let col = 0; col < cols; col++) {
+                const worldX = col + Math.floor(gsOffsetX);
+                const terrainH = getTerrainHeight(worldX);
+                const surfaceY = h - terrainH * blockSize;
+                for (let row = 0; row < rows; row++) {
+                    const by = row * blockSize;
+                    if (by < surfaceY) continue;
+                    const depth = Math.floor((by - surfaceY) / blockSize);
+                    let color, borderColor;
+                    if (depth === 0) {
+                        const topNoise = noise1D(worldX * 0.3 + gsSeed);
+                        if (topNoise > 0.3) { color = '#5D8C3A'; borderColor = '#4A7030'; }
+                        else if (topNoise > -0.3) { color = '#6B9E42'; borderColor = '#5A8538'; }
+                        else { color = '#7AAF4C'; borderColor = '#6B9E42'; }
+                    } else if (depth <= 2) { color = '#8B6914'; borderColor = '#6B5010'; }
+                    else if (depth <= 5) {
+                        const stoneVar = noise1D(worldX * 0.5 + depth + gsSeed);
+                        if (stoneVar > 0.2) { color = '#7A7A7A'; borderColor = '#666666'; }
+                        else { color = '#888888'; borderColor = '#757575'; }
+                    } else if (depth <= 7) { color = '#666666'; borderColor = '#555555'; }
+                    else { color = '#333333'; borderColor = '#222222'; }
+                    ctx.fillStyle = color;
+                    ctx.fillRect(col * blockSize, by, blockSize, blockSize);
+                    ctx.strokeStyle = borderColor;
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(col * blockSize + 0.5, by + 0.5, blockSize - 1, blockSize - 1);
+                    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                    ctx.fillRect(col * blockSize, by, blockSize, 2);
+                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                    ctx.fillRect(col * blockSize, by + blockSize - 2, blockSize, 2);
+                }
+                const treeNoise = noise1D(worldX * 0.7 + gsSeed + 1000);
+                if (treeNoise > 0.75 && terrainH > 3) drawTree(ctx, col * blockSize, surfaceY - blockSize, blockSize);
+            }
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Three GS 地形测试 | 偏移: ' + gsOffsetX, 10, 20);
+            ctx.font = '12px sans-serif';
+            ctx.fillText('使用噪声生成类似我的世界地形', 10, 38);
+        }
+        function drawTree(ctx, x, y, size) {
+            ctx.fillStyle = '#6B4226';
+            ctx.fillRect(x + size * 0.375, y - size * 3, size * 0.25, size * 3);
+            ctx.fillStyle = '#3D7A28';
+            const leafCenterX = x + size * 0.5, leafCenterY = y - size * 3.5;
+            for (let ly = 0; ly < 3; ly++) {
+                const layerWidth = ly === 1 ? 2.5 : 1.8;
+                const layerY = leafCenterY + ly * size * 0.6;
+                ctx.fillRect(leafCenterX - size * layerWidth * 0.5, layerY, size * layerWidth, size * 0.8);
+            }
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(leafCenterX - size * 0.5, leafCenterY, size * 0.3, size * 0.3);
+        }
+        function openGSTest() {
+            gsTestScreen.style.display = 'flex';
+            gsSeed = Math.random() * 10000;
+            gsOffsetX = 0;
+            const dpr = window.devicePixelRatio || 1;
+            gsCanvas.width = 800 * dpr;
+            gsCanvas.height = 480 * dpr;
+            const ctx = gsCanvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            gsCanvas.style.width = '800px';
+            gsCanvas.style.height = '480px';
+            drawTerrain();
+        }
+        function closeGSTest() { gsTestScreen.style.display = 'none'; }
+        gsTestBtn.addEventListener('click', openGSTest);
+        gsTestBtn.addEventListener('touchstart', (e) => { e.preventDefault(); openGSTest(); }, { passive: false });
+        gsBackBtn.addEventListener('click', closeGSTest);
+        gsBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); closeGSTest(); }, { passive: false });
+        gsRegenBtn.addEventListener('click', () => { gsSeed = Math.random() * 10000; drawTerrain(); });
+        gsRegenBtn.addEventListener('touchstart', (e) => { e.preventDefault(); gsSeed = Math.random() * 10000; drawTerrain(); }, { passive: false });
+        gsLeftBtn.addEventListener('click', () => { gsOffsetX -= 3; drawTerrain(); });
+        gsLeftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); gsOffsetX -= 3; drawTerrain(); }, { passive: false });
+        gsRightBtn.addEventListener('click', () => { gsOffsetX += 3; drawTerrain(); });
+        gsRightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); gsOffsetX += 3; drawTerrain(); }, { passive: false });
+
+        function resetToMain() {
+            gameFrame.src = '';
+            gameContainer.style.display = 'none';
+            floatBall.style.display = 'none';
+            loadingScreen.style.display = 'none';
+            loadingScreen.classList.remove('show');
+            mainScreen.style.display = 'flex';
+            isLaunching = false;
+            clearPlugins();
+        }
+
+        function handleLaunch(e) {
+            if (isLaunching) return;
+            isLaunching = true;
+            if (e && e.type === 'touchstart') e.preventDefault();
+            mainScreen.style.display = 'none';
+            loadingScreen.style.display = 'flex';
+            void loadingScreen.offsetWidth;
+            loadingScreen.classList.add('show');
+            const version = versionData[currentVersionIndex];
+            setTimeout(() => {
+                loadingText.textContent = '检查依赖……（随后3s后开始正转）';
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                    loadingScreen.classList.remove('show');
+                    if (version && version.file) {
+                        gameFrame.src = version.file;
+                        gameContainer.style.display = 'block';
+                        floatBall.style.display = 'flex';
+                        applyPlugins();
+                    }
+                }, 3000);
+            }, 50);
+        }
+        launchBtn.addEventListener('click', handleLaunch);
+        launchBtn.addEventListener('mousedown', handleLaunch);
+        launchBtn.addEventListener('touchstart', handleLaunch, { passive: false });
+
+        let dragState = { isDragging: false, startX: 0, startY: 0, ballLeft: 0, ballTop: 0, startTime: 0, hasMoved: false, longPressTimer: null };
+        const LONG_PRESS_TIME = 800;
+        const MOVE_THRESHOLD = 10;
+        function getClientPos(e) {
+            if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            return { x: e.clientX, y: e.clientY };
+        }
+        function onBallDown(e) {
+            e.preventDefault(); e.stopPropagation();
+            const pos = getClientPos(e);
+            const rect = floatBall.getBoundingClientRect();
+            dragState.isDragging = true;
+            dragState.hasMoved = false;
+            dragState.startX = pos.x;
+            dragState.startY = pos.y;
+            dragState.ballLeft = rect.left;
+            dragState.ballTop = rect.top;
+            dragState.startTime = Date.now();
+            floatBall.classList.add('dragging');
+            dragState.longPressTimer = setTimeout(() => {
+                if (dragState.isDragging && !dragState.hasMoved) {
+                    dragState.isDragging = false;
+                    floatBall.classList.remove('dragging');
+                    resetToMain();
+                }
+            }, LONG_PRESS_TIME);
+        }
+        function onBallMove(e) {
+            if (!dragState.isDragging) return;
+            const pos = getClientPos(e);
+            const dx = pos.x - dragState.startX;
+            const dy = pos.y - dragState.startY;
+            if (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD) {
+                dragState.hasMoved = true;
+                if (dragState.longPressTimer) { clearTimeout(dragState.longPressTimer); dragState.longPressTimer = null; }
+            }
+            floatBall.style.left = (dragState.ballLeft + dx) + 'px';
+            floatBall.style.top = (dragState.ballTop + dy) + 'px';
+            floatBall.style.transform = 'none';
+        }
+        function onBallUp(e) {
+            if (!dragState.isDragging) return;
+            if (dragState.longPressTimer) { clearTimeout(dragState.longPressTimer); dragState.longPressTimer = null; }
+            const wasDragging = dragState.isDragging;
+            dragState.isDragging = false;
+            floatBall.classList.remove('dragging');
+            if (wasDragging && !dragState.hasMoved && (Date.now() - dragState.startTime < LONG_PRESS_TIME)) confirmModal.style.display = 'flex';
+        }
+        floatBall.addEventListener('mousedown', onBallDown);
+        floatBall.addEventListener('touchstart', onBallDown, { passive: false });
+        document.addEventListener('mousemove', onBallMove);
+        document.addEventListener('touchmove', onBallMove, { passive: false });
+        document.addEventListener('mouseup', onBallUp);
+        document.addEventListener('touchend', onBallUp);
+
+        function onYes(e) { if (e && e.type === 'touchstart') e.preventDefault(); confirmModal.style.display = 'none'; resetToMain(); }
+        function onNo(e) { if (e && e.type === 'touchstart') e.preventDefault(); confirmModal.style.display = 'none'; }
+        btnYes.addEventListener('click', onYes);
+        btnYes.addEventListener('mousedown', onYes);
+        btnYes.addEventListener('touchstart', onYes, { passive: false });
+        btnNo.addEventListener('click', onNo);
+        btnNo.addEventListener('mousedown', onNo);
+        btnNo.addEventListener('touchstart', onNo, { passive: false });
+    </script>
+</body>
+</html>
